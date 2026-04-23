@@ -8,6 +8,182 @@
 > * for Turing Smart Screen, use the official forum here: http://discuz.turzx.com/
 > * for other smart screens, contact your reseller
 
+---
+
+## 🖥️ Fork pessoal — OmarchySync (Turing 5" Rev C no Omarchy/Arch Linux)
+
+Este fork adiciona o tema **OmarchySync**: um monitor de sistema que lê as cores e o wallpaper do tema ativo do [Omarchy](https://github.com/basecamp/omarchy) e gera automaticamente o layout para a tela Turing 5".
+
+> Hardware usado: **Turing Smart Screen 5" Rev C** (`/dev/ttyACM0`, VID=`0x2bc5`, PID=`0x529`)
+
+---
+
+### Arquivos modificados neste fork
+
+| Arquivo | O que foi mudado |
+|---|---|
+| `config.yaml` | `THEME: OmarchySync`, `REVISION: C`, `ETH: enp7s0`, `COM_PORT: AUTO` |
+| `library/lcd/lcd_comm_rev_c.py` | `ScreenOff()` usa `SetBrightness(0)` em vez de `TURNOFF` |
+| `library/lcd/lcd_comm.py` | `rtscts=False`, `write_timeout=5` |
+| `library/display.py` | estratégia lazy-reset (tenta HELLO antes de resetar) |
+| `generate_omarchy_theme.py` | script que gera o tema (novo arquivo) |
+| `res/themes/OmarchySync/` | tema gerado (novo diretório) |
+
+---
+
+### Pré-requisitos
+
+```bash
+# Clone o fork
+git clone https://github.com/igor-rodrigues2017/turing-smart-screen-python.git
+cd turing-smart-screen-python
+
+# Crie o venv e instale as dependências
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+pip install Pillow  # necessário para gerar o tema
+```
+
+---
+
+### Configuração inicial
+
+#### 1. `config.yaml` — ajuste para o seu hardware
+
+```yaml
+config:
+  COM_PORT: AUTO          # AUTO detecta /dev/ttyACM0 ou ttyACM1 automaticamente
+  THEME: OmarchySync
+
+  # Interface de rede (use `ip link` para descobrir o nome)
+  ETH: enp7s0             # ← mude para sua interface Ethernet
+  WLO: ''                 # ← ou preencha com sua interface Wi-Fi (ex: wlan0)
+
+display:
+  REVISION: C             # Turing 5" Rev C
+  BRIGHTNESS: 62
+  RESET_ON_STARTUP: true
+```
+
+#### 2. Gerar o tema pela primeira vez
+
+O script lê `/~/.config/omarchy/current/theme/colors.toml` e o wallpaper atual (`~/.config/omarchy/current/background`) e gera `background.png` + `theme.yaml` no diretório `res/themes/OmarchySync/`.
+
+```bash
+./venv/bin/python3 generate_omarchy_theme.py
+```
+
+---
+
+### Systemd service (iniciar na sessão gráfica)
+
+Crie o arquivo `~/.config/systemd/user/turing-smart-screen.service`:
+
+```ini
+[Unit]
+Description=Turing Smart Screen
+After=graphical-session.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/SEU_USUARIO/Projects/turing-smart-screen-python
+Environment=PYSTRAY_BACKEND=gtk
+ExecStartPre=/bin/sleep 10
+ExecStart=/home/SEU_USUARIO/Projects/turing-smart-screen-python/venv/bin/python main.py
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=graphical-session.target
+```
+
+```bash
+systemctl --user daemon-reload
+systemctl --user enable --now turing-smart-screen.service
+```
+
+> **Nota:** o `sleep 10` dá tempo para o display USB enumerar após o login.
+
+---
+
+### Alias para sincronizar manualmente
+
+Adicione ao `~/.bashrc`:
+
+```bash
+alias turing-sync='cd ~/Projects/turing-smart-screen-python && ./venv/bin/python3 generate_omarchy_theme.py && systemctl --user restart turing-smart-screen.service && echo "Turing screen updated!"'
+```
+
+```bash
+source ~/.bashrc
+# uso:
+turing-sync
+```
+
+---
+
+### Hook automático do Omarchy (atualiza ao trocar de tema)
+
+Crie o arquivo `~/.config/omarchy/hooks/theme-set` e torne-o executável:
+
+```bash
+mkdir -p ~/.config/omarchy/hooks
+cat > ~/.config/omarchy/hooks/theme-set << 'EOF'
+#!/bin/bash
+TURING_DIR="$HOME/Projects/turing-smart-screen-python"
+"$TURING_DIR/venv/bin/python3" "$TURING_DIR/generate_omarchy_theme.py" \
+  && systemctl --user restart turing-smart-screen.service \
+  && notify-send -u low "Turing Screen" "Theme updated to $1"
+EOF
+chmod +x ~/.config/omarchy/hooks/theme-set
+```
+
+A partir daí, toda vez que rodar `omarchy-theme-set <nome>` a tela atualiza sozinha.
+
+---
+
+### Fix: tela não responde após reiniciar o serviço
+
+**Sintoma:** ao rodar `systemctl --user restart`, a tela apaga e o serviço trava com `OSError: Display did not return a valid ID after 10 retries`.
+
+**Causa:** o comando `TURNOFF` coloca o display Rev C num estado não-responsivo. Na reinicialização o HELLO falha.
+
+**Correção aplicada** em `library/lcd/lcd_comm_rev_c.py`:
+
+```python
+# Antes (problemático):
+def ScreenOff(self):
+    self._send_command(Command.STOP_VIDEO)
+    self._send_command(Command.STOP_MEDIA, readsize=1024)
+    self._send_command(Command.TURNOFF)  # ← trava o display
+
+# Depois (correto):
+def ScreenOff(self):
+    self._send_command(Command.STOP_VIDEO)
+    self._send_command(Command.STOP_MEDIA, readsize=1024)
+    self.SetBrightness(0)  # ← apaga o backlight, display continua responsivo
+```
+
+Se mesmo assim a tela travar (ex: depois de uma queda brusca), replugue o USB e reinicie o serviço manualmente:
+
+```bash
+systemctl --user start turing-smart-screen.service
+```
+
+---
+
+### Fix: textos de freq/temp cobertos pelo gauge radial
+
+**Causa:** o radial tem `INTERVAL: 1` e redesenha sua área (via `BACKGROUND_IMAGE`) a cada segundo, apagando textos com `INTERVAL: 5`.
+
+**Correção aplicada** em `generate_omarchy_theme.py`:
+- Raio do radial reduzido (`cpu_r = 78`) para que o círculo não alcance a área do texto
+- Texto posicionado em `Y = cpu_cy + cpu_r + 8` (abaixo da borda inferior do círculo)
+- `FREQUENCY` e `TEMPERATURE` com `INTERVAL: 1` para redesenhar junto com o radial
+
+---
+
 ![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black) ![Windows](https://img.shields.io/badge/Windows%2010%2F11-0078D6?style=for-the-badge&logoColor=white&logo=data:image/svg%2bxml;base64,PHN2ZyByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+V2luZG93czwvdGl0bGU+PHBhdGggZmlsbCA9ICIjRkZGRkZGIiBkPSJNMCwwSDExLjM3N1YxMS4zNzJIMFpNMTIuNjIzLDBIMjRWMTEuMzcySDEyLjYyM1pNMCwxMi42MjNIMTEuMzc3VjI0SDBabTEyLjYyMywwSDI0VjI0SDEyLjYyMyIvPjwvc3ZnPg==) [![macOS](https://img.shields.io/badge/mac%20os%20(⚠️major%20bug)-000000?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/mathoudebine/turing-smart-screen-python/issues/7) ![Raspberry Pi](https://img.shields.io/badge/Raspberry%20Pi-A22846?style=for-the-badge&logo=Raspberry%20Pi&logoColor=white) ![Python](https://img.shields.io/badge/Python-3.X-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54) [![Licence](https://img.shields.io/github/license/mathoudebine/turing-smart-screen-python?style=for-the-badge)](./LICENSE)
   
 A Python system monitor program and an abstraction library for **small IPS USB-C displays.**    
