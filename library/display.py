@@ -116,15 +116,23 @@ class Display:
             logger.error("Unknown display revision '", config.CONFIG_DATA["display"]["REVISION"], "'")
 
     def initialize_display(self):
-        # Reset screen in case it was in an unstable state (screen is also cleared)
-        # Can be disabled by config. option. Assume true if key not present in config.yaml
-        if config.CONFIG_DATA["display"].get("RESET_ON_STARTUP", True):
-            self.lcd.Reset()
+        reset_on_startup = config.CONFIG_DATA["display"].get("RESET_ON_STARTUP", True)
+
+        if reset_on_startup:
+            # Try initialization without reset first (device may already be in a clean state).
+            # Only send RESTART if HELLO fails, to avoid a slow firmware reboot cycle when unnecessary.
+            try:
+                logger.debug("Trying HELLO before reset to check if display is already responsive...")
+                self.lcd.InitializeComm()
+                logger.debug("Display responded without reset")
+                # Skip to turn_on — reset not needed
+            except IOError:
+                logger.warning("Display did not respond to HELLO, resetting and retrying...")
+                self.lcd.Reset()
+                self.lcd.InitializeComm()
         else:
             logger.debug("RESET_ON_STARTUP is false: display will not be reset")
-
-        # Send initialization commands
-        self.lcd.InitializeComm()
+            self.lcd.InitializeComm()
 
         # Turn on display, set brightness and LEDs for supported HW
         self.turn_on()

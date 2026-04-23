@@ -167,7 +167,7 @@ class LcdCommRevC(LcdComm):
         for i in range(WAKE_RETRIES):
             try:
                 # Try to connect every second, since it takes sometimes multiple connect to wake up the device
-                serial.Serial(com_port.device, 115200, timeout=1, rtscts=True)
+                serial.Serial(com_port.device, 115200, timeout=1, write_timeout=5, rtscts=False)
             except serial.SerialException:
                 pass
 
@@ -212,21 +212,56 @@ class LcdCommRevC(LcdComm):
             if readsize:
                 self.update_queue.put((self.ReadData, [readsize]))
 
+    _HELLO_MAX_RETRIES = 10
+
     def _hello(self):
         # This command reads LCD answer on serial link, so it bypasses the queue
         self.sub_revision = SubRevision.UNKNOWN
+        logger.debug("Sending HELLO command...")
         self.serial_flush_input()
         self._send_command(Command.HELLO, bypass_queue=True)
-        response = ''.join(
-            filter(lambda x: x in set(string.printable), str(self.serial_read(23).decode(errors="ignore"))))
+        logger.debug("Waiting for HELLO response (23 bytes)...")
+        try:
+            raw = self.serial_read(23)
+        except serial.SerialException as e:
+            logger.warning(f"SerialException reading HELLO response: {e}")
+            raw = b''
+        logger.debug(f"Raw HELLO response ({len(raw)} bytes): {raw.hex() if raw else ''}")
+        response = ''.join(filter(lambda x: x in set(string.printable), str(raw.decode(errors="ignore"))))
         self.serial_flush_input()
         logger.debug("Display ID returned: %s" % response)
+        retries = 0
+        consecutive_empty = 0
         while not response.startswith("chs_"):
-            logger.warning("Display returned invalid or unsupported ID, try again in 1 second")
+            retries += 1
+            if retries > self._HELLO_MAX_RETRIES:
+                raise IOError(
+                    f"Display did not return a valid ID after {self._HELLO_MAX_RETRIES} retries "
+                    f"(last response: '{response}'). Check the connection and power-cycle the display."
+                )
+            logger.warning(f"Display returned invalid or unsupported ID (retry {retries}/{self._HELLO_MAX_RETRIES}), try again in 1 second")
             time.sleep(1)
-            self._send_command(Command.HELLO, bypass_queue=True)
-            response = ''.join(
-                filter(lambda x: x in set(string.printable), str(self.serial_read(23).decode(errors="ignore"))))
+            # Reopen port after several empty responses — device may need a fresh connection to respond
+            if len(raw) == 0:
+                consecutive_empty += 1
+                if consecutive_empty % 5 == 0:
+                    logger.debug(f"Got {consecutive_empty} consecutive empty responses, reopening serial port...")
+                    self.closeSerial()
+                    time.sleep(2)
+                    self.openSerial()
+            else:
+                consecutive_empty = 0
+            try:
+                self._send_command(Command.HELLO, bypass_queue=True)
+                raw = self.serial_read(23)
+            except serial.SerialException as e:
+                logger.warning(f"SerialException on HELLO retry {retries}: {e}, reopening port...")
+                self.closeSerial()
+                time.sleep(1)
+                self.openSerial()
+                raw = b''
+            logger.debug(f"Raw HELLO response ({len(raw)} bytes): {raw.hex() if raw else ''}")
+            response = ''.join(filter(lambda x: x in set(string.printable), str(raw.decode(errors="ignore"))))
             self.serial_flush_input()
             logger.debug("Display ID returned: %s" % response)
 
@@ -258,17 +293,56 @@ class LcdCommRevC(LcdComm):
 
     def Reset(self):
         logger.info("Display reset (COM port may change)...")
+        ports_before = [(p.device, hex(p.vid or 0), hex(p.pid or 0), p.serial_number) for p in comports()]
+        logger.debug(f"COM ports before reset: {ports_before}")
+        # Check trackability before reset to avoid a race where the device disconnects
+        # before the first loop iteration and we wrongly conclude it's untracked
+        device_is_tracked = LcdCommRevC._get_awake_com_port(comports()) is not None
+        logger.debug(f"Device trackable by VID/PID: {device_is_tracked}")
         # Reset command bypasses queue because it is run when queue threads are not yet started
+        logger.debug("Sending RESTART command...")
         self._send_command(Command.RESTART, bypass_queue=True)
+        logger.debug("Closing serial port...")
         self.closeSerial()
-        # Wait for disconnection (max. 15 seconds)
-        for i in range(15):
-            if LcdCommRevC._get_awake_com_port(comports()) is not None:
-                time.sleep(1)
-        # Wait for reconnection (max. 15 seconds)
-        for i in range(15):
-            if LcdCommRevC._get_awake_com_port(comports()) is None:
-                time.sleep(1)
+        if device_is_tracked:
+            # Wait for disconnection (max. 15 seconds)
+            disconnected = False
+            logger.debug("Waiting for device to disconnect...")
+            for i in range(15):
+                if LcdCommRevC._get_awake_com_port(comports()) is not None:
+                    logger.debug(f"Device still connected (second {i + 1})...")
+                    time.sleep(1)
+                else:
+                    logger.debug(f"Device disconnected after {i + 1}s")
+                    disconnected = True
+                    break
+            # Wait for reconnection (max. 15 seconds)
+            logger.debug("Waiting for device to reconnect...")
+            for i in range(15):
+                if LcdCommRevC._get_awake_com_port(comports()) is None:
+                    logger.debug(f"Device not yet visible (second {i + 1})...")
+                    time.sleep(1)
+                else:
+                    logger.debug(f"Device reconnected after {i + 1}s")
+                    break
+            # Update com_port in case it changed after reset
+            new_port = LcdCommRevC._get_awake_com_port(comports())
+            if new_port:
+                if new_port != self.com_port:
+                    logger.debug(f"COM port changed after reset: {self.com_port} -> {new_port}")
+                self.com_port = new_port
+            # If device never disconnected, firmware restarted without USB re-enumeration.
+            # Give it extra time to fully reinitialize before HELLO is sent.
+            if not disconnected:
+                logger.debug("Device did not USB-disconnect during reset, waiting 10s for firmware to reinitialize...")
+                time.sleep(10)
+        else:
+            # VID/PID not recognised: use a fixed delay instead of polling forever
+            logger.debug("Device not detected by VID/PID tracking, using 5s fixed delay for reset")
+            time.sleep(5)
+        ports_after = [(p.device, hex(p.vid or 0), hex(p.pid or 0), p.serial_number) for p in comports()]
+        logger.debug(f"COM ports after reset: {ports_after}")
+        logger.debug(f"Reopening serial on {self.com_port}...")
         # Reconnect to device
         self.openSerial()
 
@@ -288,7 +362,8 @@ class LcdCommRevC(LcdComm):
         # logger.info("Calling ScreenOff")
         self._send_command(Command.STOP_VIDEO)
         self._send_command(Command.STOP_MEDIA, readsize=1024)
-        self._send_command(Command.TURNOFF)
+        # Use brightness=0 instead of TURNOFF so the display stays responsive to HELLO on restart
+        self.SetBrightness(0)
 
     def ScreenOn(self):
         # logger.info("Calling ScreenOn")

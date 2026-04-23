@@ -105,7 +105,7 @@ class LcdComm(ABC):
             logger.debug(f"Static COM port: {self.com_port}")
 
         try:
-            self.lcd_serial = serial.Serial(self.com_port, 115200, timeout=1, rtscts=True)
+            self.lcd_serial = serial.Serial(self.com_port, 115200, timeout=1, write_timeout=5, rtscts=False)
         except Exception as e:
             logger.error(f"Cannot open COM port {self.com_port}: {e}")
             try:
