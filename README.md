@@ -10,55 +10,55 @@
 
 ---
 
-## 🖥️ Fork pessoal — OmarchySync (Turing 5" Rev C no Omarchy/Arch Linux)
+## 🖥️ Personal fork — OmarchySync (Turing 5" Rev C on Omarchy/Arch Linux)
 
-Este fork adiciona o tema **OmarchySync**: um monitor de sistema que lê as cores e o wallpaper do tema ativo do [Omarchy](https://github.com/basecamp/omarchy) e gera automaticamente o layout para a tela Turing 5".
+This fork adds the **OmarchySync** theme: a system monitor that reads the colors and wallpaper from the active [Omarchy](https://github.com/basecamp/omarchy) theme and automatically generates a matching layout for the Turing 5" screen.
 
-> Hardware usado: **Turing Smart Screen 5" Rev C** (`/dev/ttyACM0`, VID=`0x2bc5`, PID=`0x529`)
+> Hardware: **Turing Smart Screen 5" Rev C** (`/dev/ttyACM0`, VID=`0x2bc5`, PID=`0x529`)
 
 ---
 
-### Arquivos modificados neste fork
+### Files changed in this fork
 
-| Arquivo | O que foi mudado |
+| File | What changed |
 |---|---|
 | `config.yaml` | `THEME: OmarchySync`, `REVISION: C`, `ETH: enp7s0`, `COM_PORT: AUTO` |
-| `library/lcd/lcd_comm_rev_c.py` | `ScreenOff()` usa `SetBrightness(0)` em vez de `TURNOFF` |
+| `library/lcd/lcd_comm_rev_c.py` | `ScreenOff()` uses `SetBrightness(0)` instead of `TURNOFF` |
 | `library/lcd/lcd_comm.py` | `rtscts=False`, `write_timeout=5` |
-| `library/display.py` | estratégia lazy-reset (tenta HELLO antes de resetar) |
-| `generate_omarchy_theme.py` | script que gera o tema (novo arquivo) |
-| `res/themes/OmarchySync/` | tema gerado (novo diretório) |
+| `library/display.py` | lazy-reset strategy (tries HELLO before triggering a hardware reset) |
+| `generate_omarchy_theme.py` | script that generates the theme (new file) |
+| `res/themes/OmarchySync/` | generated theme directory (new) |
 
 ---
 
-### Pré-requisitos
+### Prerequisites
 
 ```bash
-# Clone o fork
+# Clone the fork
 git clone https://github.com/igor-rodrigues2017/turing-smart-screen-python.git
 cd turing-smart-screen-python
 
-# Crie o venv e instale as dependências
+# Create the venv and install dependencies
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-pip install Pillow  # necessário para gerar o tema
+pip install Pillow  # required for theme generation
 ```
 
 ---
 
-### Configuração inicial
+### Initial setup
 
-#### 1. `config.yaml` — ajuste para o seu hardware
+#### 1. `config.yaml` — adjust for your hardware
 
 ```yaml
 config:
-  COM_PORT: AUTO          # AUTO detecta /dev/ttyACM0 ou ttyACM1 automaticamente
+  COM_PORT: AUTO          # AUTO detects /dev/ttyACM0 or ttyACM1 automatically
   THEME: OmarchySync
 
-  # Interface de rede (use `ip link` para descobrir o nome)
-  ETH: enp7s0             # ← mude para sua interface Ethernet
-  WLO: ''                 # ← ou preencha com sua interface Wi-Fi (ex: wlan0)
+  # Network interface (use `ip link` to find yours)
+  ETH: enp7s0             # ← change to your Ethernet interface
+  WLO: ''                 # ← or fill with your Wi-Fi interface (e.g. wlan0)
 
 display:
   REVISION: C             # Turing 5" Rev C
@@ -66,19 +66,38 @@ display:
   RESET_ON_STARTUP: true
 ```
 
-#### 2. Gerar o tema pela primeira vez
+#### 2. Generate the theme for the first time
 
-O script lê `/~/.config/omarchy/current/theme/colors.toml` e o wallpaper atual (`~/.config/omarchy/current/background`) e gera `background.png` + `theme.yaml` no diretório `res/themes/OmarchySync/`.
+The script reads `~/.config/omarchy/current/theme/colors.toml` and the active wallpaper symlink (`~/.config/omarchy/current/background`), then writes `background.png` + `theme.yaml` into `res/themes/OmarchySync/`.
 
 ```bash
 ./venv/bin/python3 generate_omarchy_theme.py
 ```
 
+The generated layout is a btop-inspired 800×480 landscape design:
+
+```
+┌─────────────────────────────────────────────────────┐
+│  HH:MM:SS          Day  DD/Mon/YYYY                  │  header
+├──────────────────────────┬──────────────────────────┤
+│  CPU                     │  NETWORK                 │
+│    [radial gauge]        │    ↑  upload speed       │
+│    freq      temp        │    ↓  download speed     │
+├──────────────────────────┤──────────────────────────┤
+│  MEM  [bar] used / free  │  GPU                     │
+│  SWP  [bar] used         │    [bar] % / temp        │
+├──────────────────────────┤    [bar] VRAM            │
+│  DISK [bar] used / total │                          │
+└──────────────────────────┴──────────────────────────┘
+```
+
+Colors and wallpaper update automatically with each Omarchy theme change.
+
 ---
 
-### Systemd service (iniciar na sessão gráfica)
+### Systemd service (auto-start with graphical session)
 
-Crie o arquivo `~/.config/systemd/user/turing-smart-screen.service`:
+Create `~/.config/systemd/user/turing-smart-screen.service`:
 
 ```ini
 [Unit]
@@ -87,10 +106,10 @@ After=graphical-session.target
 
 [Service]
 Type=simple
-WorkingDirectory=/home/SEU_USUARIO/Projects/turing-smart-screen-python
+WorkingDirectory=/home/YOUR_USER/Projects/turing-smart-screen-python
 Environment=PYSTRAY_BACKEND=gtk
 ExecStartPre=/bin/sleep 10
-ExecStart=/home/SEU_USUARIO/Projects/turing-smart-screen-python/venv/bin/python main.py
+ExecStart=/home/YOUR_USER/Projects/turing-smart-screen-python/venv/bin/python main.py
 Restart=on-failure
 RestartSec=10
 
@@ -103,13 +122,13 @@ systemctl --user daemon-reload
 systemctl --user enable --now turing-smart-screen.service
 ```
 
-> **Nota:** o `sleep 10` dá tempo para o display USB enumerar após o login.
+> The `sleep 10` gives the USB display time to enumerate after login.
 
 ---
 
-### Alias para sincronizar manualmente
+### Manual sync alias
 
-Adicione ao `~/.bashrc`:
+Add to `~/.bashrc`:
 
 ```bash
 alias turing-sync='cd ~/Projects/turing-smart-screen-python && ./venv/bin/python3 generate_omarchy_theme.py && systemctl --user restart turing-smart-screen.service && echo "Turing screen updated!"'
@@ -117,15 +136,15 @@ alias turing-sync='cd ~/Projects/turing-smart-screen-python && ./venv/bin/python
 
 ```bash
 source ~/.bashrc
-# uso:
+# usage:
 turing-sync
 ```
 
 ---
 
-### Hook automático do Omarchy (atualiza ao trocar de tema)
+### Automatic Omarchy hook (syncs on theme change)
 
-Crie o arquivo `~/.config/omarchy/hooks/theme-set` e torne-o executável:
+Create `~/.config/omarchy/hooks/theme-set` and make it executable:
 
 ```bash
 mkdir -p ~/.config/omarchy/hooks
@@ -139,33 +158,33 @@ EOF
 chmod +x ~/.config/omarchy/hooks/theme-set
 ```
 
-A partir daí, toda vez que rodar `omarchy-theme-set <nome>` a tela atualiza sozinha.
+From now on, every `omarchy-theme-set <name>` call will automatically regenerate and reload the screen theme.
 
 ---
 
-### Fix: tela não responde após reiniciar o serviço
+### Fix: display unresponsive after service restart
 
-**Sintoma:** ao rodar `systemctl --user restart`, a tela apaga e o serviço trava com `OSError: Display did not return a valid ID after 10 retries`.
+**Symptom:** after `systemctl --user restart`, the screen goes dark and the service crashes with `OSError: Display did not return a valid ID after 10 retries`.
 
-**Causa:** o comando `TURNOFF` coloca o display Rev C num estado não-responsivo. Na reinicialização o HELLO falha.
+**Cause:** the `TURNOFF` command puts the Rev C display into a non-responsive state. On the next startup, the HELLO handshake fails because the display firmware is offline.
 
-**Correção aplicada** em `library/lcd/lcd_comm_rev_c.py`:
+**Fix applied** in `library/lcd/lcd_comm_rev_c.py`:
 
 ```python
-# Antes (problemático):
+# Before (broken):
 def ScreenOff(self):
     self._send_command(Command.STOP_VIDEO)
     self._send_command(Command.STOP_MEDIA, readsize=1024)
-    self._send_command(Command.TURNOFF)  # ← trava o display
+    self._send_command(Command.TURNOFF)  # puts display in unresponsive state
 
-# Depois (correto):
+# After (fixed):
 def ScreenOff(self):
     self._send_command(Command.STOP_VIDEO)
     self._send_command(Command.STOP_MEDIA, readsize=1024)
-    self.SetBrightness(0)  # ← apaga o backlight, display continua responsivo
+    self.SetBrightness(0)  # turns off backlight, display stays responsive
 ```
 
-Se mesmo assim a tela travar (ex: depois de uma queda brusca), replugue o USB e reinicie o serviço manualmente:
+If the display gets stuck anyway (e.g. after a hard kill), unplug and replug the USB cable, then:
 
 ```bash
 systemctl --user start turing-smart-screen.service
@@ -173,14 +192,14 @@ systemctl --user start turing-smart-screen.service
 
 ---
 
-### Fix: textos de freq/temp cobertos pelo gauge radial
+### Fix: freq/temp text overwritten by the CPU radial gauge
 
-**Causa:** o radial tem `INTERVAL: 1` e redesenha sua área (via `BACKGROUND_IMAGE`) a cada segundo, apagando textos com `INTERVAL: 5`.
+**Cause:** `CPU.PERCENTAGE.RADIAL` has `INTERVAL: 1` and repaints its bounding box (via `BACKGROUND_IMAGE`) every second, erasing the `FREQUENCY` and `TEMPERATURE` text elements that only refresh every 5 seconds.
 
-**Correção aplicada** em `generate_omarchy_theme.py`:
-- Raio do radial reduzido (`cpu_r = 78`) para que o círculo não alcance a área do texto
-- Texto posicionado em `Y = cpu_cy + cpu_r + 8` (abaixo da borda inferior do círculo)
-- `FREQUENCY` e `TEMPERATURE` com `INTERVAL: 1` para redesenhar junto com o radial
+**Fix applied** in `generate_omarchy_theme.py`:
+- Radial radius reduced to `cpu_r = 78` so the circle does not reach the text area
+- Text positioned at `Y = cpu_cy + cpu_r + 8` — below the bottom edge of the circle
+- `FREQUENCY` and `TEMPERATURE` set to `INTERVAL: 1` so they always redraw right after the radial
 
 ---
 
