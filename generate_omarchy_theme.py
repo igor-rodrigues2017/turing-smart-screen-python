@@ -26,9 +26,9 @@ COL_SEP  = 400
 
 # Left column
 CPU_TOP  = HEADER_H   # 44
-CPU_BOT  = 262        # expanded to fit model name + radial + freq/temp
+CPU_BOT  = 275        # expanded to fit 20px model name + radial + freq/temp
 MEM_TOP  = CPU_BOT + 1
-MEM_BOT  = 362
+MEM_BOT  = 376
 DISK_TOP = MEM_BOT + 1
 DISK_BOT = H
 
@@ -136,7 +136,7 @@ def draw_baked_labels(draw, colors, cpu_model: str, gpu_model: str):
         font_bold = ImageFont.truetype(
             os.path.join(FONTS_DIR, "jetbrains-mono", "JetBrainsMono-Bold.ttf"), 20)
         font_model = ImageFont.truetype(
-            os.path.join(FONTS_DIR, "jetbrains-mono", "JetBrainsMono-Regular.ttf"), 14)
+            os.path.join(FONTS_DIR, "jetbrains-mono", "JetBrainsMono-Regular.ttf"), 20)
     except Exception:
         return
 
@@ -145,7 +145,7 @@ def draw_baked_labels(draw, colors, cpu_model: str, gpu_model: str):
     # section labels
     draw.text((PAD, CPU_TOP  + 5), "CPU",     fill=dim,  font=font_bold)
     draw.text((PAD, MEM_TOP  + 5), "MEM",     fill=dim,  font=font_bold)
-    draw.text((PAD, MEM_TOP + 52), "SWP",     fill=dim,  font=font_bold)
+    draw.text((PAD, MEM_TOP + 56), "SWP",     fill=dim,  font=font_bold)
     draw.text((PAD, DISK_TOP + 5), "DISK",    fill=dim,  font=font_bold)
     draw.text((rx,  NET_TOP  + 5), "NETWORK", fill=dim,  font=font_bold)
     draw.text((rx,  GPU_TOP  + 5), "GPU",     fill=dim,  font=font_bold)
@@ -181,17 +181,17 @@ def write_theme_yaml(colors: dict, path: str):
     FONT_BOLD = "jetbrains-mono/JetBrainsMono-Bold.ttf"
     BG        = "background.png"
 
-    # CPU radial — model name sits at CPU_TOP+30 (14px, ~18px tall), ends ~48
-    # radial top starts at CPU_TOP+52, giving 4px gap after model text
+    # CPU radial — model name at CPU_TOP+30 (20px, ~24px tall, ends ~54)
+    # radial top starts at CPU_TOP+60, giving 6px gap after model text
     cpu_cx = COL_SEP // 2
     cpu_r  = 68
-    cpu_cy = CPU_TOP + 52 + cpu_r   # 44+52+68 = 164
+    cpu_cy = CPU_TOP + 60 + cpu_r   # 44+60+68 = 172; bottom=240; freq/temp at 248
 
     # MEM/DISK bars
     bar_w      = COL_SEP - PAD * 2   # 376
     bar_h      = 14
     mem_bar_y  = MEM_TOP + 30
-    swap_bar_y = MEM_TOP + 74
+    swap_bar_y = MEM_TOP + 76
     disk_bar_y = DISK_TOP + 30
 
     # NET — spaced for font-size 37
@@ -199,10 +199,10 @@ def write_theme_yaml(colors: dict, path: str):
     net_up_y   = NET_TOP + 32        # 76
     net_dn_y   = NET_TOP + 140       # 184
 
-    # GPU — model name at GPU_TOP+30, bars below
+    # GPU — model name at GPU_TOP+30 (20px, ends ~54); bars pushed below
     gpu_bar_w  = W - COL_SEP - PAD * 2   # 376
-    gpu_bar_y  = GPU_TOP + 52
-    gpu_mem_y  = GPU_TOP + 96
+    gpu_bar_y  = GPU_TOP + 60
+    gpu_mem_y  = GPU_TOP + 104
 
     yaml = f"""\
 ---
@@ -341,7 +341,7 @@ STATS:
         SHOW: True
         SHOW_UNIT: True
         X: {PAD + 50}
-        Y: {MEM_TOP + 52}
+        Y: {MEM_TOP + 56}
         FONT: {FONT}
         FONT_SIZE: 20
         FONT_COLOR: {c(accent)}
@@ -455,7 +455,7 @@ STATS:
         FONT_COLOR: {c(yellow)}
         BACKGROUND_IMAGE: {BG}
     TEMPERATURE:
-      INTERVAL: 5
+      INTERVAL: 1
       TEXT:
         SHOW: True
         SHOW_UNIT: True
@@ -466,7 +466,7 @@ STATS:
         FONT_COLOR: {c(dim)}
         BACKGROUND_IMAGE: {BG}
     MEMORY:
-      INTERVAL: 5
+      INTERVAL: 1
       GRAPH:
         SHOW: True
         X: {rx}
@@ -482,7 +482,7 @@ STATS:
         SHOW: True
         SHOW_UNIT: True
         X: {rx + 50}
-        Y: {GPU_TOP + 52}
+        Y: {GPU_TOP + 60}
         FONT: {FONT}
         FONT_SIZE: 20
         FONT_COLOR: {c(dim)}
