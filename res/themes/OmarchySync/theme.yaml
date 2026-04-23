@@ -173,16 +173,6 @@ STATS:
         FONT_SIZE: 20
         FONT_COLOR: 142, 118, 108
         BACKGROUND_IMAGE: background.png
-    FREE:
-      TEXT:
-        SHOW: True
-        SHOW_UNIT: True
-        X: 322
-        Y: 382
-        FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
-        FONT_SIZE: 20
-        FONT_COLOR: 142, 118, 108
-        BACKGROUND_IMAGE: background.png
 
   NET:
     INTERVAL: 1
@@ -275,7 +265,7 @@ STATS:
         SHOW: True
         SHOW_UNIT: True
         X: 462
-        Y: 343
+        Y: 365
         FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
         FONT_SIZE: 20
         FONT_COLOR: 142, 118, 108

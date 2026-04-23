@@ -380,16 +380,6 @@ STATS:
         FONT_SIZE: 20
         FONT_COLOR: {c(dim)}
         BACKGROUND_IMAGE: {BG}
-    FREE:
-      TEXT:
-        SHOW: True
-        SHOW_UNIT: True
-        X: {PAD + 310}
-        Y: {DISK_TOP + 5}
-        FONT: {FONT}
-        FONT_SIZE: 20
-        FONT_COLOR: {c(dim)}
-        BACKGROUND_IMAGE: {BG}
 
   NET:
     INTERVAL: 1
@@ -482,7 +472,7 @@ STATS:
         SHOW: True
         SHOW_UNIT: True
         X: {rx + 50}
-        Y: {GPU_TOP + 60}
+        Y: {gpu_bar_y + 22}
         FONT: {FONT}
         FONT_SIZE: 20
         FONT_COLOR: {c(dim)}
