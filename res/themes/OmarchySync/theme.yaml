@@ -32,9 +32,9 @@ STATS:
       TEXT:
         SHOW: True
         X: 228
-        Y: 11
+        Y: 10
         FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
-        FONT_SIZE: 22
+        FONT_SIZE: 26
         FONT_COLOR: 142, 118, 108
         BACKGROUND_IMAGE: background.png
         WIDTH: 360
@@ -46,8 +46,8 @@ STATS:
       RADIAL:
         SHOW: True
         X: 200
-        Y: 147
-        RADIUS: 78
+        Y: 164
+        RADIUS: 68
         WIDTH: 8
         MIN_VALUE: 0
         MAX_VALUE: 100
@@ -60,7 +60,7 @@ STATS:
         SHOW_TEXT: True
         SHOW_UNIT: False
         FONT: jetbrains-mono/JetBrainsMono-Bold.ttf
-        FONT_SIZE: 43
+        FONT_SIZE: 52
         FONT_COLOR: 255, 206, 173
         BACKGROUND_IMAGE: background.png
     FREQUENCY:
@@ -68,10 +68,10 @@ STATS:
       TEXT:
         SHOW: True
         SHOW_UNIT: True
-        X: 120
-        Y: 233
+        X: 116
+        Y: 240
         FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
-        FONT_SIZE: 17
+        FONT_SIZE: 20
         FONT_COLOR: 163, 191, 209
         BACKGROUND_IMAGE: background.png
     TEMPERATURE:
@@ -79,10 +79,10 @@ STATS:
       TEXT:
         SHOW: True
         SHOW_UNIT: True
-        X: 210
-        Y: 233
+        X: 212
+        Y: 240
         FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
-        FONT_SIZE: 17
+        FONT_SIZE: 20
         FONT_COLOR: 233, 187, 79
         BACKGROUND_IMAGE: background.png
 
@@ -92,7 +92,7 @@ STATS:
       GRAPH:
         SHOW: True
         X: 12
-        Y: 281
+        Y: 293
         WIDTH: 376
         HEIGHT: 14
         MIN_VALUE: 0
@@ -103,26 +103,26 @@ STATS:
       USED:
         SHOW: True
         SHOW_UNIT: True
-        X: 58
-        Y: 260
+        X: 62
+        Y: 268
         FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
-        FONT_SIZE: 17
+        FONT_SIZE: 20
         FONT_COLOR: 163, 191, 209
         BACKGROUND_IMAGE: background.png
       FREE:
         SHOW: True
         SHOW_UNIT: True
-        X: 192
-        Y: 260
+        X: 207
+        Y: 268
         FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
-        FONT_SIZE: 17
+        FONT_SIZE: 20
         FONT_COLOR: 142, 118, 108
         BACKGROUND_IMAGE: background.png
     SWAP:
       GRAPH:
         SHOW: True
         X: 12
-        Y: 323
+        Y: 337
         WIDTH: 376
         HEIGHT: 14
         MIN_VALUE: 0
@@ -133,10 +133,10 @@ STATS:
       USED:
         SHOW: True
         SHOW_UNIT: True
-        X: 58
-        Y: 303
+        X: 62
+        Y: 315
         FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
-        FONT_SIZE: 17
+        FONT_SIZE: 20
         FONT_COLOR: 125, 130, 217
         BACKGROUND_IMAGE: background.png
 
@@ -146,7 +146,7 @@ STATS:
       GRAPH:
         SHOW: True
         X: 12
-        Y: 382
+        Y: 393
         WIDTH: 376
         HEIGHT: 14
         MIN_VALUE: 0
@@ -157,30 +157,30 @@ STATS:
       TEXT:
         SHOW: True
         SHOW_UNIT: True
-        X: 58
-        Y: 361
+        X: 62
+        Y: 368
         FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
-        FONT_SIZE: 17
+        FONT_SIZE: 20
         FONT_COLOR: 237, 91, 90
         BACKGROUND_IMAGE: background.png
     TOTAL:
       TEXT:
         SHOW: True
         SHOW_UNIT: True
-        X: 192
-        Y: 361
+        X: 207
+        Y: 368
         FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
-        FONT_SIZE: 17
+        FONT_SIZE: 20
         FONT_COLOR: 142, 118, 108
         BACKGROUND_IMAGE: background.png
     FREE:
       TEXT:
         SHOW: True
         SHOW_UNIT: True
-        X: 307
-        Y: 361
+        X: 322
+        Y: 368
         FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
-        FONT_SIZE: 17
+        FONT_SIZE: 20
         FONT_COLOR: 142, 118, 108
         BACKGROUND_IMAGE: background.png
 
@@ -190,37 +190,37 @@ STATS:
       UPLOAD:
         TEXT:
           SHOW: True
-          X: 434
-          Y: 72
+          X: 436
+          Y: 76
           FONT: jetbrains-mono/JetBrainsMono-Bold.ttf
-          FONT_SIZE: 31
+          FONT_SIZE: 37
           FONT_COLOR: 146, 165, 147
           BACKGROUND_IMAGE: background.png
       UPLOADED:
         TEXT:
           SHOW: True
-          X: 434
-          Y: 112
+          X: 436
+          Y: 122
           FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
-          FONT_SIZE: 16
+          FONT_SIZE: 19
           FONT_COLOR: 142, 118, 108
           BACKGROUND_IMAGE: background.png
       DOWNLOAD:
         TEXT:
           SHOW: True
-          X: 434
-          Y: 170
+          X: 436
+          Y: 184
           FONT: jetbrains-mono/JetBrainsMono-Bold.ttf
-          FONT_SIZE: 31
+          FONT_SIZE: 37
           FONT_COLOR: 125, 130, 217
           BACKGROUND_IMAGE: background.png
       DOWNLOADED:
         TEXT:
           SHOW: True
-          X: 434
-          Y: 210
+          X: 436
+          Y: 230
           FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
-          FONT_SIZE: 16
+          FONT_SIZE: 19
           FONT_COLOR: 142, 118, 108
           BACKGROUND_IMAGE: background.png
 
@@ -230,7 +230,7 @@ STATS:
       GRAPH:
         SHOW: True
         X: 412
-        Y: 309
+        Y: 335
         WIDTH: 376
         HEIGHT: 14
         MIN_VALUE: 0
@@ -241,10 +241,10 @@ STATS:
       TEXT:
         SHOW: True
         SHOW_UNIT: True
-        X: 458
+        X: 462
         Y: 288
         FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
-        FONT_SIZE: 17
+        FONT_SIZE: 20
         FONT_COLOR: 233, 187, 79
         BACKGROUND_IMAGE: background.png
     TEMPERATURE:
@@ -252,10 +252,10 @@ STATS:
       TEXT:
         SHOW: True
         SHOW_UNIT: True
-        X: 592
+        X: 607
         Y: 288
         FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
-        FONT_SIZE: 17
+        FONT_SIZE: 20
         FONT_COLOR: 142, 118, 108
         BACKGROUND_IMAGE: background.png
     MEMORY:
@@ -263,7 +263,7 @@ STATS:
       GRAPH:
         SHOW: True
         X: 412
-        Y: 351
+        Y: 379
         WIDTH: 376
         HEIGHT: 14
         MIN_VALUE: 0
@@ -274,9 +274,9 @@ STATS:
       TEXT:
         SHOW: True
         SHOW_UNIT: True
-        X: 458
-        Y: 331
+        X: 462
+        Y: 335
         FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
-        FONT_SIZE: 17
+        FONT_SIZE: 20
         FONT_COLOR: 142, 118, 108
         BACKGROUND_IMAGE: background.png

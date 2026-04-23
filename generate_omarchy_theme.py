@@ -9,6 +9,8 @@ Usage:
 
 import tomllib
 import os
+import re
+import subprocess
 from PIL import Image, ImageDraw, ImageFont
 
 OMARCHY_COLORS = os.path.expanduser("~/.config/omarchy/current/theme/colors.toml")
@@ -24,9 +26,9 @@ COL_SEP  = 400
 
 # Left column
 CPU_TOP  = HEADER_H   # 44
-CPU_BOT  = 254
+CPU_BOT  = 262        # expanded to fit model name + radial + freq/temp
 MEM_TOP  = CPU_BOT + 1
-MEM_BOT  = 355
+MEM_BOT  = 362
 DISK_TOP = MEM_BOT + 1
 DISK_BOT = H
 
@@ -46,6 +48,39 @@ def hex_to_rgb(h: str) -> tuple[int, int, int]:
 
 def blend(rgb: tuple, bg: tuple, alpha: float) -> tuple[int, int, int]:
     return tuple(int(c * alpha + b * (1 - alpha)) for c, b in zip(rgb, bg))
+
+
+def get_cpu_model() -> str:
+    try:
+        for line in open("/proc/cpuinfo").read().splitlines():
+            if "model name" in line:
+                name = line.split(":", 1)[1].strip()
+                name = re.sub(r"\([RTM]+\)", "", name)
+                name = re.sub(r"\s+CPU\s+@\s+[\d.]+GHz", "", name)
+                name = re.sub(r"\s+\d+-Core Processor", "", name)
+                return re.sub(r"\s+", " ", name).strip()
+    except Exception:
+        pass
+    return "Unknown CPU"
+
+
+def get_gpu_model() -> str:
+    try:
+        out = subprocess.check_output(
+            ["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"],
+            text=True, stderr=subprocess.DEVNULL).strip().splitlines()[0]
+        return out.replace("NVIDIA ", "")
+    except Exception:
+        pass
+    try:
+        for line in subprocess.check_output(["lspci"], text=True).splitlines():
+            if "VGA" in line or "3D" in line:
+                part = line.split(":", 2)[-1].strip()
+                part = re.sub(r"\(rev [0-9a-f]+\)", "", part).strip()
+                return part[:40]
+    except Exception:
+        pass
+    return "Unknown GPU"
 
 
 def load_wallpaper() -> Image.Image | None:
@@ -72,64 +107,62 @@ def build_background(colors: dict) -> Image.Image:
     wall = load_wallpaper()
     if wall:
         overlay = Image.new("RGB", (W, H), bg)
-        # 73% overlay keeps wallpaper subtle but readable
         img = Image.blend(wall, overlay, 0.73)
     else:
         img = Image.new("RGB", (W, H), bg)
 
     draw = ImageDraw.Draw(img)
 
-    # header bottom accent glow
     for i, a in [(0, 0.35), (1, 0.16), (2, 0.06)]:
         draw.line([(0, HEADER_H - i), (W, HEADER_H - i)], fill=blend(accent, bg, a))
 
-    # column separator
-    draw.line([(COL_SEP, HEADER_H), (COL_SEP, H)], fill=sep)
-
-    # left horizontal separators
-    draw.line([(0, CPU_BOT),  (COL_SEP, CPU_BOT)],  fill=sep)
-    draw.line([(0, MEM_BOT),  (COL_SEP, MEM_BOT)],  fill=sep)
-
-    # right horizontal separator
-    draw.line([(COL_SEP, NET_BOT), (W, NET_BOT)], fill=sep)
+    draw.line([(COL_SEP, HEADER_H), (COL_SEP, H)],    fill=sep)
+    draw.line([(0, CPU_BOT),  (COL_SEP, CPU_BOT)],    fill=sep)
+    draw.line([(0, MEM_BOT),  (COL_SEP, MEM_BOT)],    fill=sep)
+    draw.line([(COL_SEP, NET_BOT), (W, NET_BOT)],     fill=sep)
 
     return img
 
 
-def draw_baked_labels(draw, colors):
+def draw_baked_labels(draw, colors, cpu_model: str, gpu_model: str):
     bg     = hex_to_rgb(colors["background"])
     fg     = hex_to_rgb(colors["foreground"])
     green  = hex_to_rgb(colors["color2"])
     accent = hex_to_rgb(colors["accent"])
     dim    = blend(fg, bg, 0.55)
+    dim2   = blend(fg, bg, 0.40)
 
     try:
         font_bold = ImageFont.truetype(
-            os.path.join(FONTS_DIR, "jetbrains-mono", "JetBrainsMono-Bold.ttf"), 17)
+            os.path.join(FONTS_DIR, "jetbrains-mono", "JetBrainsMono-Bold.ttf"), 20)
+        font_model = ImageFont.truetype(
+            os.path.join(FONTS_DIR, "jetbrains-mono", "JetBrainsMono-Regular.ttf"), 14)
     except Exception:
         return
 
     rx = COL_SEP + PAD
 
     # section labels
-    draw.text((PAD, CPU_TOP  + 5), "CPU",     fill=dim, font=font_bold)
-    draw.text((PAD, MEM_TOP  + 5), "MEM",     fill=dim, font=font_bold)
-    draw.text((PAD, MEM_TOP + 48), "SWP",     fill=dim, font=font_bold)
-    draw.text((PAD, DISK_TOP + 5), "DISK",    fill=dim, font=font_bold)
-    draw.text((rx,  NET_TOP  + 5), "NETWORK", fill=dim, font=font_bold)
-    draw.text((rx,  GPU_TOP  + 5), "GPU",     fill=dim, font=font_bold)
+    draw.text((PAD, CPU_TOP  + 5), "CPU",     fill=dim,  font=font_bold)
+    draw.text((PAD, MEM_TOP  + 5), "MEM",     fill=dim,  font=font_bold)
+    draw.text((PAD, MEM_TOP + 52), "SWP",     fill=dim,  font=font_bold)
+    draw.text((PAD, DISK_TOP + 5), "DISK",    fill=dim,  font=font_bold)
+    draw.text((rx,  NET_TOP  + 5), "NETWORK", fill=dim,  font=font_bold)
+    draw.text((rx,  GPU_TOP  + 5), "GPU",     fill=dim,  font=font_bold)
+
+    # hardware model names (baked so they don't get overwritten by stats)
+    draw.text((PAD, CPU_TOP + 30), cpu_model, fill=dim2, font=font_model)
+    draw.text((rx,  GPU_TOP + 30), gpu_model, fill=dim2, font=font_model)
 
     # ↑ / ↓ network arrows
-    def arrow(x, y, up, color, size=11):
-        if up:
-            pts = [(x, y + size), (x + size // 2, y), (x + size, y + size)]
-        else:
-            pts = [(x, y), (x + size // 2, y + size), (x + size, y)]
+    def arrow(x, y, up, color, size=12):
+        pts = ([(x, y+size), (x+size//2, y), (x+size, y+size)] if up
+               else [(x, y), (x+size//2, y+size), (x+size, y)])
         draw.line([pts[0], pts[1]], fill=color, width=2)
         draw.line([pts[1], pts[2]], fill=color, width=2)
 
-    arrow(rx + 4, NET_TOP + 34,  True,  green)
-    arrow(rx + 4, NET_TOP + 132, False, accent)
+    arrow(rx + 4, NET_TOP + 38,  True,  green)
+    arrow(rx + 4, NET_TOP + 148, False, accent)
 
 
 def write_theme_yaml(colors: dict, path: str):
@@ -148,29 +181,28 @@ def write_theme_yaml(colors: dict, path: str):
     FONT_BOLD = "jetbrains-mono/JetBrainsMono-Bold.ttf"
     BG        = "background.png"
 
-    # CPU radial — radius shrunk to leave ~28px below circle for freq/temp text
-    cpu_cx = COL_SEP // 2           # 200
-    cpu_r  = 78
-    cpu_cy = CPU_TOP + 25 + cpu_r   # top of circle at CPU_TOP+25, gives room for label above
+    # CPU radial — model name sits at CPU_TOP+30 (14px, ~18px tall), ends ~48
+    # radial top starts at CPU_TOP+52, giving 4px gap after model text
+    cpu_cx = COL_SEP // 2
+    cpu_r  = 68
+    cpu_cy = CPU_TOP + 52 + cpu_r   # 44+52+68 = 164
 
     # MEM/DISK bars
-    bar_w     = COL_SEP - PAD * 2   # 376
-    bar_h     = 14
-    mem_bar_y  = MEM_TOP + 26
-    swap_bar_y = MEM_TOP + 68
-    disk_bar_y = DISK_TOP + 26
+    bar_w      = COL_SEP - PAD * 2   # 376
+    bar_h      = 14
+    mem_bar_y  = MEM_TOP + 30
+    swap_bar_y = MEM_TOP + 74
+    disk_bar_y = DISK_TOP + 30
 
-    # NET (right column) — spaced for font-size 31
-    rx         = COL_SEP + PAD      # 412
-    net_up_y   = NET_TOP + 28       # 72
-    net_dn_y   = NET_TOP + 126      # 170
-    net_arr_up = NET_TOP + 34
-    net_arr_dn = NET_TOP + 132
+    # NET — spaced for font-size 37
+    rx         = COL_SEP + PAD       # 412
+    net_up_y   = NET_TOP + 32        # 76
+    net_dn_y   = NET_TOP + 140       # 184
 
-    # GPU (right column)
-    gpu_bar_w = W - COL_SEP - PAD * 2   # 376
-    gpu_bar_y = GPU_TOP + 26
-    gpu_mem_y = GPU_TOP + 68
+    # GPU — model name at GPU_TOP+30, bars below
+    gpu_bar_w  = W - COL_SEP - PAD * 2   # 376
+    gpu_bar_y  = GPU_TOP + 52
+    gpu_mem_y  = GPU_TOP + 96
 
     yaml = f"""\
 ---
@@ -207,9 +239,9 @@ STATS:
       TEXT:
         SHOW: True
         X: 228
-        Y: 11
+        Y: 10
         FONT: {FONT}
-        FONT_SIZE: 22
+        FONT_SIZE: 26
         FONT_COLOR: {c(dim)}
         BACKGROUND_IMAGE: {BG}
         WIDTH: 360
@@ -235,7 +267,7 @@ STATS:
         SHOW_TEXT: True
         SHOW_UNIT: False
         FONT: {FONT_BOLD}
-        FONT_SIZE: 43
+        FONT_SIZE: 52
         FONT_COLOR: {c(fg)}
         BACKGROUND_IMAGE: {BG}
     FREQUENCY:
@@ -243,10 +275,10 @@ STATS:
       TEXT:
         SHOW: True
         SHOW_UNIT: True
-        X: {cpu_cx - 80}
+        X: {cpu_cx - 84}
         Y: {cpu_cy + cpu_r + 8}
         FONT: {FONT}
-        FONT_SIZE: 17
+        FONT_SIZE: 20
         FONT_COLOR: {c(cyan)}
         BACKGROUND_IMAGE: {BG}
     TEMPERATURE:
@@ -254,10 +286,10 @@ STATS:
       TEXT:
         SHOW: True
         SHOW_UNIT: True
-        X: {cpu_cx + 10}
+        X: {cpu_cx + 12}
         Y: {cpu_cy + cpu_r + 8}
         FONT: {FONT}
-        FONT_SIZE: 17
+        FONT_SIZE: 20
         FONT_COLOR: {c(yellow)}
         BACKGROUND_IMAGE: {BG}
 
@@ -278,19 +310,19 @@ STATS:
       USED:
         SHOW: True
         SHOW_UNIT: True
-        X: {PAD + 46}
+        X: {PAD + 50}
         Y: {MEM_TOP + 5}
         FONT: {FONT}
-        FONT_SIZE: 17
+        FONT_SIZE: 20
         FONT_COLOR: {c(cyan)}
         BACKGROUND_IMAGE: {BG}
       FREE:
         SHOW: True
         SHOW_UNIT: True
-        X: {PAD + 180}
+        X: {PAD + 195}
         Y: {MEM_TOP + 5}
         FONT: {FONT}
-        FONT_SIZE: 17
+        FONT_SIZE: 20
         FONT_COLOR: {c(dim)}
         BACKGROUND_IMAGE: {BG}
     SWAP:
@@ -308,10 +340,10 @@ STATS:
       USED:
         SHOW: True
         SHOW_UNIT: True
-        X: {PAD + 46}
-        Y: {MEM_TOP + 48}
+        X: {PAD + 50}
+        Y: {MEM_TOP + 52}
         FONT: {FONT}
-        FONT_SIZE: 17
+        FONT_SIZE: 20
         FONT_COLOR: {c(accent)}
         BACKGROUND_IMAGE: {BG}
 
@@ -332,30 +364,30 @@ STATS:
       TEXT:
         SHOW: True
         SHOW_UNIT: True
-        X: {PAD + 46}
+        X: {PAD + 50}
         Y: {DISK_TOP + 5}
         FONT: {FONT}
-        FONT_SIZE: 17
+        FONT_SIZE: 20
         FONT_COLOR: {c(red)}
         BACKGROUND_IMAGE: {BG}
     TOTAL:
       TEXT:
         SHOW: True
         SHOW_UNIT: True
-        X: {PAD + 180}
+        X: {PAD + 195}
         Y: {DISK_TOP + 5}
         FONT: {FONT}
-        FONT_SIZE: 17
+        FONT_SIZE: 20
         FONT_COLOR: {c(dim)}
         BACKGROUND_IMAGE: {BG}
     FREE:
       TEXT:
         SHOW: True
         SHOW_UNIT: True
-        X: {PAD + 295}
+        X: {PAD + 310}
         Y: {DISK_TOP + 5}
         FONT: {FONT}
-        FONT_SIZE: 17
+        FONT_SIZE: 20
         FONT_COLOR: {c(dim)}
         BACKGROUND_IMAGE: {BG}
 
@@ -365,37 +397,37 @@ STATS:
       UPLOAD:
         TEXT:
           SHOW: True
-          X: {rx + 22}
+          X: {rx + 24}
           Y: {net_up_y}
           FONT: {FONT_BOLD}
-          FONT_SIZE: 31
+          FONT_SIZE: 37
           FONT_COLOR: {c(green)}
           BACKGROUND_IMAGE: {BG}
       UPLOADED:
         TEXT:
           SHOW: True
-          X: {rx + 22}
-          Y: {net_up_y + 40}
+          X: {rx + 24}
+          Y: {net_up_y + 46}
           FONT: {FONT}
-          FONT_SIZE: 16
+          FONT_SIZE: 19
           FONT_COLOR: {c(dim)}
           BACKGROUND_IMAGE: {BG}
       DOWNLOAD:
         TEXT:
           SHOW: True
-          X: {rx + 22}
+          X: {rx + 24}
           Y: {net_dn_y}
           FONT: {FONT_BOLD}
-          FONT_SIZE: 31
+          FONT_SIZE: 37
           FONT_COLOR: {c(accent)}
           BACKGROUND_IMAGE: {BG}
       DOWNLOADED:
         TEXT:
           SHOW: True
-          X: {rx + 22}
-          Y: {net_dn_y + 40}
+          X: {rx + 24}
+          Y: {net_dn_y + 46}
           FONT: {FONT}
-          FONT_SIZE: 16
+          FONT_SIZE: 19
           FONT_COLOR: {c(dim)}
           BACKGROUND_IMAGE: {BG}
 
@@ -416,10 +448,10 @@ STATS:
       TEXT:
         SHOW: True
         SHOW_UNIT: True
-        X: {rx + 46}
+        X: {rx + 50}
         Y: {GPU_TOP + 5}
         FONT: {FONT}
-        FONT_SIZE: 17
+        FONT_SIZE: 20
         FONT_COLOR: {c(yellow)}
         BACKGROUND_IMAGE: {BG}
     TEMPERATURE:
@@ -427,10 +459,10 @@ STATS:
       TEXT:
         SHOW: True
         SHOW_UNIT: True
-        X: {rx + 180}
+        X: {rx + 195}
         Y: {GPU_TOP + 5}
         FONT: {FONT}
-        FONT_SIZE: 17
+        FONT_SIZE: 20
         FONT_COLOR: {c(dim)}
         BACKGROUND_IMAGE: {BG}
     MEMORY:
@@ -449,10 +481,10 @@ STATS:
       TEXT:
         SHOW: True
         SHOW_UNIT: True
-        X: {rx + 46}
-        Y: {GPU_TOP + 48}
+        X: {rx + 50}
+        Y: {GPU_TOP + 52}
         FONT: {FONT}
-        FONT_SIZE: 17
+        FONT_SIZE: 20
         FONT_COLOR: {c(dim)}
         BACKGROUND_IMAGE: {BG}
 """
@@ -464,11 +496,16 @@ def main():
     with open(OMARCHY_COLORS, "rb") as f:
         colors = tomllib.load(f)
 
+    cpu_model = get_cpu_model()
+    gpu_model = get_gpu_model()
+    print(f"  CPU: {cpu_model}")
+    print(f"  GPU: {gpu_model}")
+
     os.makedirs(THEME_DIR, exist_ok=True)
 
     img  = build_background(colors)
     draw = ImageDraw.Draw(img)
-    draw_baked_labels(draw, colors)
+    draw_baked_labels(draw, colors, cpu_model, gpu_model)
 
     bg_path = os.path.join(THEME_DIR, "background.png")
     img.save(bg_path)
