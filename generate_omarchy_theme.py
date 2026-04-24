@@ -7,6 +7,7 @@ Usage:
     ./venv/bin/python3 generate_omarchy_theme.py
 """
 
+import io
 import tomllib
 import os
 import re
@@ -15,6 +16,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 OMARCHY_COLORS = os.path.expanduser("~/.config/omarchy/current/theme/colors.toml")
 OMARCHY_BG     = os.path.expanduser("~/.config/omarchy/current/background")
+OMARCHY_FONT   = os.path.expanduser("~/.local/share/omarchy/config/omarchy.ttf")
 THEME_DIR      = os.path.join(os.path.dirname(__file__), "res", "themes", "OmarchySync")
 FONTS_DIR      = os.path.join(os.path.dirname(__file__), "res", "fonts")
 
@@ -96,6 +98,30 @@ def load_wallpaper() -> Image.Image | None:
     except Exception as e:
         print(f"  [warn] could not load wallpaper: {e}")
         return None
+
+
+OMARCHY_LOGO_SVG = os.path.expanduser("~/.local/share/omarchy/logo.svg")
+LOGO_H = 28  # fits inside 44px header with ~8px vertical padding
+
+
+def draw_omarchy_logo(img: Image.Image, colors: dict):
+    fg = hex_to_rgb(colors["foreground"])
+    fg_hex = f"{fg[0]:02x}{fg[1]:02x}{fg[2]:02x}"
+    logo_w = int(LOGO_H * 1215 / 285)
+    date_end_x = 228 + 360  # DAY text X + WIDTH from theme.yaml
+    logo_x = (date_end_x + W) // 2 - logo_w // 2
+    logo_y = (HEADER_H - LOGO_H) // 2
+    try:
+        with open(OMARCHY_LOGO_SVG) as f:
+            svg = f.read().replace('fill="#000"', f'fill="#{fg_hex}"')
+        result = subprocess.run(
+            ["rsvg-convert", "-w", str(logo_w), "-h", str(LOGO_H), "-f", "png"],
+            input=svg.encode(), capture_output=True)
+        if result.returncode == 0:
+            logo = Image.open(io.BytesIO(result.stdout)).convert("RGBA")
+            img.paste(logo, (logo_x, logo_y), logo)
+    except Exception as e:
+        print(f"  [warn] could not draw Omarchy logo: {e}")
 
 
 def build_background(colors: dict) -> Image.Image:
@@ -496,6 +522,7 @@ def main():
     img  = build_background(colors)
     draw = ImageDraw.Draw(img)
     draw_baked_labels(draw, colors, cpu_model, gpu_model)
+    draw_omarchy_logo(img, colors)
 
     bg_path = os.path.join(THEME_DIR, "background.png")
     img.save(bg_path)
