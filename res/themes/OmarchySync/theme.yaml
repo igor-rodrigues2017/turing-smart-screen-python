@@ -4,7 +4,7 @@ author: "OmarchySync (auto-generated)"
 display:
   DISPLAY_SIZE: 5"
   DISPLAY_ORIENTATION: landscape
-  DISPLAY_RGB_LED: 125, 130, 217
+  DISPLAY_RGB_LED: 127, 187, 179
 
 static_images:
   BACKGROUND:
@@ -24,7 +24,7 @@ STATS:
         Y: 4
         FONT: jetbrains-mono/JetBrainsMono-Bold.ttf
         FONT_SIZE: 32
-        FONT_COLOR: 255, 206, 173
+        FONT_COLOR: 211, 198, 170
         BACKGROUND_IMAGE: background.png
         WIDTH: 200
         ANCHOR: lt
@@ -35,7 +35,7 @@ STATS:
         Y: 10
         FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
         FONT_SIZE: 26
-        FONT_COLOR: 142, 118, 108
+        FONT_COLOR: 136, 132, 120
         BACKGROUND_IMAGE: background.png
         WIDTH: 360
         ANCHOR: lt
@@ -56,12 +56,12 @@ STATS:
         ANGLE_STEPS: 1
         ANGLE_SEP: 0
         CLOCKWISE: True
-        BAR_COLOR: 146, 165, 147
+        BAR_COLOR: 167, 192, 128
         SHOW_TEXT: True
         SHOW_UNIT: False
         FONT: jetbrains-mono/JetBrainsMono-Bold.ttf
         FONT_SIZE: 52
-        FONT_COLOR: 255, 206, 173
+        FONT_COLOR: 211, 198, 170
         BACKGROUND_IMAGE: background.png
     FREQUENCY:
       INTERVAL: 1
@@ -72,7 +72,7 @@ STATS:
         Y: 248
         FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
         FONT_SIZE: 20
-        FONT_COLOR: 163, 191, 209
+        FONT_COLOR: 131, 192, 146
         BACKGROUND_IMAGE: background.png
     TEMPERATURE:
       INTERVAL: 1
@@ -83,7 +83,7 @@ STATS:
         Y: 248
         FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
         FONT_SIZE: 20
-        FONT_COLOR: 233, 187, 79
+        FONT_COLOR: 219, 188, 127
         BACKGROUND_IMAGE: background.png
 
   MEMORY:
@@ -97,7 +97,7 @@ STATS:
         HEIGHT: 14
         MIN_VALUE: 0
         MAX_VALUE: 100
-        BAR_COLOR: 163, 191, 209
+        BAR_COLOR: 131, 192, 146
         BAR_OUTLINE: False
         BACKGROUND_IMAGE: background.png
       USED:
@@ -107,7 +107,7 @@ STATS:
         Y: 281
         FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
         FONT_SIZE: 20
-        FONT_COLOR: 163, 191, 209
+        FONT_COLOR: 131, 192, 146
         BACKGROUND_IMAGE: background.png
       FREE:
         SHOW: True
@@ -116,7 +116,7 @@ STATS:
         Y: 281
         FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
         FONT_SIZE: 20
-        FONT_COLOR: 142, 118, 108
+        FONT_COLOR: 136, 132, 120
         BACKGROUND_IMAGE: background.png
     SWAP:
       GRAPH:
@@ -127,7 +127,7 @@ STATS:
         HEIGHT: 14
         MIN_VALUE: 0
         MAX_VALUE: 100
-        BAR_COLOR: 125, 130, 217
+        BAR_COLOR: 127, 187, 179
         BAR_OUTLINE: False
         BACKGROUND_IMAGE: background.png
       USED:
@@ -137,7 +137,7 @@ STATS:
         Y: 332
         FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
         FONT_SIZE: 20
-        FONT_COLOR: 125, 130, 217
+        FONT_COLOR: 127, 187, 179
         BACKGROUND_IMAGE: background.png
 
   DISK:
@@ -151,7 +151,7 @@ STATS:
         HEIGHT: 14
         MIN_VALUE: 0
         MAX_VALUE: 100
-        BAR_COLOR: 237, 91, 90
+        BAR_COLOR: 230, 126, 128
         BAR_OUTLINE: False
         BACKGROUND_IMAGE: background.png
       TEXT:
@@ -161,7 +161,7 @@ STATS:
         Y: 382
         FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
         FONT_SIZE: 20
-        FONT_COLOR: 237, 91, 90
+        FONT_COLOR: 230, 126, 128
         BACKGROUND_IMAGE: background.png
     TOTAL:
       TEXT:
@@ -171,7 +171,7 @@ STATS:
         Y: 382
         FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
         FONT_SIZE: 20
-        FONT_COLOR: 142, 118, 108
+        FONT_COLOR: 136, 132, 120
         BACKGROUND_IMAGE: background.png
 
   NET:
@@ -184,7 +184,7 @@ STATS:
           Y: 76
           FONT: jetbrains-mono/JetBrainsMono-Bold.ttf
           FONT_SIZE: 37
-          FONT_COLOR: 146, 165, 147
+          FONT_COLOR: 167, 192, 128
           BACKGROUND_IMAGE: background.png
       UPLOADED:
         TEXT:
@@ -193,7 +193,7 @@ STATS:
           Y: 122
           FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
           FONT_SIZE: 19
-          FONT_COLOR: 142, 118, 108
+          FONT_COLOR: 136, 132, 120
           BACKGROUND_IMAGE: background.png
       DOWNLOAD:
         TEXT:
@@ -202,7 +202,7 @@ STATS:
           Y: 184
           FONT: jetbrains-mono/JetBrainsMono-Bold.ttf
           FONT_SIZE: 37
-          FONT_COLOR: 125, 130, 217
+          FONT_COLOR: 127, 187, 179
           BACKGROUND_IMAGE: background.png
       DOWNLOADED:
         TEXT:
@@ -211,7 +211,7 @@ STATS:
           Y: 230
           FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
           FONT_SIZE: 19
-          FONT_COLOR: 142, 118, 108
+          FONT_COLOR: 136, 132, 120
           BACKGROUND_IMAGE: background.png
 
   GPU:
@@ -225,7 +225,7 @@ STATS:
         HEIGHT: 14
         MIN_VALUE: 0
         MAX_VALUE: 100
-        BAR_COLOR: 233, 187, 79
+        BAR_COLOR: 219, 188, 127
         BAR_OUTLINE: False
         BACKGROUND_IMAGE: background.png
       TEXT:
@@ -235,7 +235,7 @@ STATS:
         Y: 288
         FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
         FONT_SIZE: 20
-        FONT_COLOR: 233, 187, 79
+        FONT_COLOR: 219, 188, 127
         BACKGROUND_IMAGE: background.png
     TEMPERATURE:
       INTERVAL: 1
@@ -246,7 +246,7 @@ STATS:
         Y: 288
         FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
         FONT_SIZE: 20
-        FONT_COLOR: 142, 118, 108
+        FONT_COLOR: 136, 132, 120
         BACKGROUND_IMAGE: background.png
     MEMORY:
       INTERVAL: 1
@@ -258,7 +258,7 @@ STATS:
         HEIGHT: 14
         MIN_VALUE: 0
         MAX_VALUE: 100
-        BAR_COLOR: 233, 187, 79
+        BAR_COLOR: 219, 188, 127
         BAR_OUTLINE: False
         BACKGROUND_IMAGE: background.png
       TEXT:
@@ -268,5 +268,5 @@ STATS:
         Y: 365
         FONT: jetbrains-mono/JetBrainsMono-Regular.ttf
         FONT_SIZE: 20
-        FONT_COLOR: 142, 118, 108
+        FONT_COLOR: 136, 132, 120
         BACKGROUND_IMAGE: background.png
