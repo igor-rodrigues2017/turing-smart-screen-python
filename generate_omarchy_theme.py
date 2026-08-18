@@ -14,9 +14,9 @@ import re
 import subprocess
 from PIL import Image, ImageDraw, ImageFont
 
-OMARCHY_COLORS = os.path.expanduser("~/.config/omarchy/current/theme/colors.toml")
-OMARCHY_BG     = os.path.expanduser("~/.config/omarchy/current/background")
-OMARCHY_FONT   = os.path.expanduser("~/.local/share/omarchy/config/omarchy.ttf")
+OMARCHY_COLORS = os.path.expanduser("~/.local/state/omarchy/current/theme/colors.toml")
+OMARCHY_BG     = os.path.expanduser("~/.local/state/omarchy/current/background")
+OMARCHY_FONT   = "/usr/share/fonts/omarchy/omarchy.ttf"
 THEME_DIR      = os.path.join(os.path.dirname(__file__), "res", "themes", "OmarchySync")
 FONTS_DIR      = os.path.join(os.path.dirname(__file__), "res", "fonts")
 
@@ -511,6 +511,12 @@ STATS:
 def main():
     with open(OMARCHY_COLORS, "rb") as f:
         colors = tomllib.load(f)
+
+    # Omarchy 4 renamed the ANSI color1/color2/... keys to named colors.
+    colors.setdefault("color1", colors["red"])
+    colors.setdefault("color2", colors["green"])
+    colors.setdefault("color3", colors["yellow"])
+    colors.setdefault("color6", colors["cyan"])
 
     cpu_model = get_cpu_model()
     gpu_model = get_gpu_model()
