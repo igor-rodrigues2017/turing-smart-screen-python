@@ -504,8 +504,11 @@ STATS:
         FONT_COLOR: {c(dim)}
         BACKGROUND_IMAGE: {BG}
 """
-    with open(path, "w") as f:
+    # Atomic: the screen service may be (re)starting and reading this file.
+    tmp = f"{path}.tmp"
+    with open(tmp, "w") as f:
         f.write(yaml)
+    os.replace(tmp, path)
 
 
 def main():
@@ -531,7 +534,9 @@ def main():
     draw_omarchy_logo(img, colors)
 
     bg_path = os.path.join(THEME_DIR, "background.png")
-    img.save(bg_path)
+    tmp_bg = f"{bg_path}.tmp"
+    img.save(tmp_bg, format="PNG")
+    os.replace(tmp_bg, bg_path)
     print(f"✓ background.png  ({W}x{H})")
 
     yaml_path = os.path.join(THEME_DIR, "theme.yaml")
